@@ -57,7 +57,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 	user := db.GetUser(userId)
 
-	js, err := json.Marshal(user)
+	response, err := json.Marshal(user)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
