@@ -1,7 +1,7 @@
 package db
 
 import (
-	"fmt"
+	"errors"
 	"github.com/gomodule/redigo/redis"
 	"log"
 	"strconv"
@@ -10,8 +10,8 @@ import (
 var Pool *redis.Pool
 
 type User struct {
-	Id string `json:"id"`
-	Username string `json:"username"`
+	Id    string `json:"id"`
+	Email string `json:"email"`
 }
 
 func ListUsers() []User {
@@ -33,35 +33,63 @@ func ListUsers() []User {
 	return users
 }
 
-func CreateUser (id int, username string) {
+func CreateUser(email string) error {
 	conn := Pool.Get()
 
-	nextUserId, err := redis.String(conn.Do("INCR", "next_user_id"))
+	nextUserId, err := redis.Int(conn.Do("INCR", "next_user_id"))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	//TODO: make a generic create method
-	_, err1 := conn.Do("HMSET", "user:" + nextUserId, "id", id, "username", username)
+	_, err = conn.Do("HMSET", "user:"+strconv.Itoa(nextUserId), "email", email)
 
-	if err1 != nil {
-		log.Fatal(err)
+	if err != nil {
+		return err
 	}
 
-	fmt.Println("CREATED USER " + username)
+	_, err = conn.Do("HSET", "users", email, nextUserId)
+
+	if err != nil {
+		return err
+	}
+
+	log.Println("CREATED USER " + email)
+
+	return nil
 }
 
-func GetUser (id int) *User{
+func GetUser(id string) (*User, error) {
 	conn := Pool.Get()
 
-	user, err := redis.StringMap(conn.Do("HGETALL", "user:" + strconv.Itoa(id)))
+	user, err := redis.StringMap(conn.Do("HGETALL", "user:"+id))
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	if len(user) == 0 {
+		return nil, errors.New("no such user")
+	}
+
 	return &User{
-		Id:       user["id"],
-		Username: user["username"],
+		Id:    id,
+		Email: user["email"],
+	}, nil
+}
+
+func UserExists(email string) bool {
+	conn := Pool.Get()
+
+	userId, err := conn.Do("HGET", "users", email)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if userId == nil {
+		return false
+	} else {
+		return true
 	}
 }
