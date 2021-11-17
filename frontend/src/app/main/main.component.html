@@ -1,0 +1,11 @@
+<div>
+  <ng-container *ngIf="!logged">
+    <button (click)="login()">LOG IN</button>
+  </ng-container>
+
+  <ng-container *ngIf="logged">
+    Welcome, {{socialUser.email}}!!!
+    <button (click)="logOut()">LOG OUT</button>
+    <button (click)="userList()">User list</button>
+  </ng-container>
+</div>
