@@ -4,14 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/coreos/go-oidc/v3/oidc"
-	"golang.org/x/oauth2"
 	"hennge/yerassyl/twitterclone/internal/db"
 	"net/http"
 	"strings"
 )
 
-var Oauth2Config oauth2.Config
-var Provider *oidc.Provider
 var Verifier *oidc.IDTokenVerifier
 
 func Authorization(next http.Handler) http.Handler {
