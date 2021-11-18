@@ -16,6 +16,8 @@ type User struct {
 
 func ListUsers() []User {
 	conn := Pool.Get()
+
+	//TODO: Will fix this
 	keys, err := redis.Strings(conn.Do("SCAN", "0", "MATCH", "user:*"))
 	if err != nil {
 		log.Fatal(err)

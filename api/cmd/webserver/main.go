@@ -5,20 +5,17 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/gomodule/redigo/redis"
-	"golang.org/x/oauth2"
 	"hennge/yerassyl/twitterclone/internal/auth"
 	"hennge/yerassyl/twitterclone/internal/db"
 	"hennge/yerassyl/twitterclone/internal/webservice"
 	"net/http"
-	"os"
 	"time"
 )
 
 var (
-	clientID     = os.Getenv("clientId")
-	clientSecret = os.Getenv("clientSecret")
-	redirectURL  = os.Getenv("redirectUrl")
+	clientID     = "798066806591-sn722ltj9mus74s6985moee0mq9cnl0u.apps.googleusercontent.com"
 )
 
 func main() {
@@ -38,30 +35,21 @@ func main() {
 		// handle error
 	}
 
-	auth.Provider = provider
-
 	auth.Verifier = provider.Verifier(&oidc.Config{ClientID: clientID})
 
-	// Configure an OpenID Connect aware OAuth2 client.
-	oauth2Config := oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		RedirectURL:  redirectURL,
-
-		// Discovery returns the OAuth2 endpoints.
-		Endpoint: provider.Endpoint(),
-
-		// "openid" is a required scope for OpenID Connect flows.
-		Scopes: []string{oidc.ScopeOpenID, "profile", "email"},
-	}
-
-	auth.Oauth2Config = oauth2Config
-
 	r := chi.NewRouter()
+	r.Use(cors.Handler(cors.Options{
+		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
 	r.Use(middleware.Logger)
 
-	r.Get("/", auth.HandleRedirect)
-	r.Get("/auth/google/callback", auth.HandleOAuth2Callback)
 	r.Route("/user", func(r chi.Router) {
 		r.Use(auth.Authorization)
 		r.Get("/", webservice.ListUsers)
