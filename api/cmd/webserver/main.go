@@ -10,11 +10,12 @@ import (
 	"hennge/yerassyl/twitterclone/internal/auth"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 var (
-	clientID = "798066806591-sn722ltj9mus74s6985moee0mq9cnl0u.apps.googleusercontent.com"
+	clientID = os.Getenv("clientId")
 )
 
 func NewPool() *redis.Pool {
