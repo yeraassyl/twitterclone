@@ -7,14 +7,22 @@ import (
 	"net/http"
 )
 
-func ListUsers(w http.ResponseWriter, r *http.Request) {
+type UserService struct {
+	userRepository db.UserRepository
+}
+
+func NewUserService(repository db.UserRepository) *UserService{
+	return &UserService{userRepository: repository}
+}
+
+func (s *UserService) ListUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodPost)
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
 
-	js, err := json.Marshal(db.ListUsers())
+	js, err := json.Marshal(s.userRepository.ListUsers())
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -24,7 +32,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
+func (s *UserService) GetUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodPost)
 		http.Error(w, http.StatusText(405), 405)
@@ -32,7 +40,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 	userId := chi.URLParam(r, "id")
 
-	user, err := db.GetUser(userId)
+	user, err := s.userRepository.GetUser(userId)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)

@@ -18,6 +18,10 @@ export class MainComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    let token = localStorage.getItem('token');
+    if (token != null) {
+      this.logged = true;
+    }
     this.socialAuthService.authState.subscribe((user) => {
       this.socialUser = user;
       localStorage.setItem('token', user.idToken)
@@ -33,6 +37,7 @@ export class MainComponent implements OnInit {
   logOut(){
     this.socialAuthService.signOut();
     this.logged = false;
+    localStorage.clear();
   }
 
   userList(){

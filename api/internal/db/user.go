@@ -7,36 +7,48 @@ import (
 	"strconv"
 )
 
-var Pool *redis.Pool
-
 type User struct {
 	Id    string `json:"id"`
 	Email string `json:"email"`
 }
 
-func ListUsers() []User {
-	conn := Pool.Get()
+type UserRepository interface {
+	ListUsers() []User
+	CreateUser(email string) error
+	GetUser(id string) (*User, error)
+	UserExists(email string) bool
+}
 
-	//TODO: Will fix this
-	keys, err := redis.Strings(conn.Do("SCAN", "0", "MATCH", "user:*"))
+type UserRedisRepository struct {
+	pool *redis.Pool
+}
+
+func NewUserRepository(pool *redis.Pool) UserRepository{
+	return &UserRedisRepository{pool: pool}
+}
+
+func (r *UserRedisRepository) ListUsers() []User {
+	conn := r.pool.Get()
+
+	emailToId, err := redis.StringMap(conn.Do("HGETALL", "users"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	var users []User
 
-	for _, key := range keys {
-		user, err1 := redis.StringMap(conn.Do("HGETALL", key))
-		if err1 != nil {
-			log.Fatal(err1)
+	for email, id := range emailToId {
+		//user, err := redis.StringMap(conn.Do("HGETALL", "user:"+id))
+		if err != nil {
+			log.Fatal(err)
 		}
-		users = append(users, User{user["id"], user["username"]})
+		users = append(users, User{id, email})
 	}
 	return users
 }
 
-func CreateUser(email string) error {
-	conn := Pool.Get()
+func (r *UserRedisRepository) CreateUser(email string) error {
+	conn := r.pool.Get()
 
 	nextUserId, err := redis.Int(conn.Do("INCR", "next_user_id"))
 	if err != nil {
@@ -61,8 +73,8 @@ func CreateUser(email string) error {
 	return nil
 }
 
-func GetUser(id string) (*User, error) {
-	conn := Pool.Get()
+func (r *UserRedisRepository) GetUser(id string) (*User, error) {
+	conn := r.pool.Get()
 
 	user, err := redis.StringMap(conn.Do("HGETALL", "user:"+id))
 
@@ -80,8 +92,8 @@ func GetUser(id string) (*User, error) {
 	}, nil
 }
 
-func UserExists(email string) bool {
-	conn := Pool.Get()
+func (r *UserRedisRepository) UserExists(email string) bool {
+	conn := r.pool.Get()
 
 	userId, err := conn.Do("HGET", "users", email)
 
@@ -94,4 +106,22 @@ func UserExists(email string) bool {
 	} else {
 		return true
 	}
+}
+
+func (r *UserRedisRepository) follow(userId string, followerId string) error {
+	conn := r.pool.Get()
+
+	email, err := redis.String(conn.Do("HGET", "user:"+followerId, "email"))
+
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Do("ZADD", "followers:"+userId, followerId, email)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
