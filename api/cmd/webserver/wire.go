@@ -13,3 +13,8 @@ func InitializeUserService() *webservice.UserService {
 	wire.Build(NewPool, db.NewUserRepository, webservice.NewUserService)
 	return &webservice.UserService{}
 }
+
+func InitializerTweetService() *webservice.TweetService {
+	wire.Build(NewPool, db.NewUserRepository, db.NewTweetRepository, webservice.NewTweetService)
+	return &webservice.TweetService{}
+}

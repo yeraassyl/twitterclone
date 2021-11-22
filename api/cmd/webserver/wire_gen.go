@@ -19,3 +19,11 @@ func InitializeUserService() *webservice.UserService {
 	userService := webservice.NewUserService(userRepository)
 	return userService
 }
+
+func InitializerTweetService() *webservice.TweetService {
+	pool := NewPool()
+	tweetRepository := db.NewTweetRepository(pool)
+	userRepository := db.NewUserRepository(pool)
+	tweetService := webservice.NewTweetService(tweetRepository, userRepository)
+	return tweetService
+}

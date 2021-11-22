@@ -31,6 +31,7 @@ func NewPool() *redis.Pool {
 func main() {
 	ctx := context.Background()
 	userService := InitializeUserService()
+	tweetService := InitializerTweetService()
 
 	provider, err := oidc.NewProvider(ctx, "https://accounts.google.com")
 	if err != nil {
@@ -58,6 +59,13 @@ func main() {
 		r.Post("/", userService.CreateUser)
 		r.Get("/{id}", userService.GetUser)
 		r.Post("/follow", userService.Follow)
+	})
+
+	r.Route("/tweet", func(r chi.Router) {
+		r.Use(auth.Authorization)
+		r.Post("/", tweetService.CreateTweet)
+		r.Get("/{id}", tweetService.GetTweet)
+		r.Post("/{id}/like", tweetService.Like)
 	})
 
 	http.ListenAndServe(":8080", r)
