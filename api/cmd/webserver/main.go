@@ -8,31 +8,33 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/gomodule/redigo/redis"
 	"hennge/yerassyl/twitterclone/internal/auth"
-	"hennge/yerassyl/twitterclone/internal/db"
-	"hennge/yerassyl/twitterclone/internal/webservice"
+	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 var (
-	clientID     = "798066806591-sn722ltj9mus74s6985moee0mq9cnl0u.apps.googleusercontent.com"
+	clientID = os.Getenv("clientId")
 )
 
-func main() {
-	pool := &redis.Pool{
+func NewPool() *redis.Pool {
+	return &redis.Pool{
 		MaxIdle:     10,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
 			return redis.Dial("tcp", "localhost:6379")
 		},
 	}
-	db.Pool = pool
+}
 
+func main() {
 	ctx := context.Background()
+	userService := InitializeUserService()
 
 	provider, err := oidc.NewProvider(ctx, "https://accounts.google.com")
 	if err != nil {
-		// handle error
+		log.Println(err)
 	}
 
 	auth.Verifier = provider.Verifier(&oidc.Config{ClientID: clientID})
@@ -40,7 +42,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedOrigins: []string{"https://*", "http://*"},
 		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
@@ -52,8 +54,10 @@ func main() {
 
 	r.Route("/user", func(r chi.Router) {
 		r.Use(auth.Authorization)
-		r.Get("/", webservice.ListUsers)
-		r.Get("/{id}", webservice.GetUser)
+		r.Get("/", userService.ListUsers)
+		r.Post("/", userService.CreateUser)
+		r.Get("/{id}", userService.GetUser)
+		r.Post("/follow", userService.Follow)
 	})
 
 	http.ListenAndServe(":8080", r)

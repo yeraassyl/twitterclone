@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/coreos/go-oidc/v3/oidc"
-	"hennge/yerassyl/twitterclone/internal/db"
 	"net/http"
 	"strings"
 )
@@ -33,12 +32,12 @@ func Authorization(next http.Handler) http.Handler {
 				http.Error(w, "Couldn't extract user", http.StatusInternalServerError)
 				return
 			}
-			if !db.UserExists(claims.Email) {
-				err = db.CreateUser(claims.Email)
-				if err != nil {
-					http.Error(w, "Failed to create user"+err.Error(), http.StatusInternalServerError)
-				}
-			}
+			//if !db.UserExists(claims.Email) {
+			//	err = db.CreateUser(claims.Email)
+			//	if err != nil {
+			//		http.Error(w, "Failed to create user"+err.Error(), http.StatusInternalServerError)
+			//	}
+			//}
 			cntxt := context.WithValue(r.Context(), "user", claims.Email)
 			next.ServeHTTP(w, r.WithContext(cntxt))
 		}
