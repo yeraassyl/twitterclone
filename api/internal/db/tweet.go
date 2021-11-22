@@ -8,7 +8,8 @@ import (
 
 type Tweet struct {
 	timePosted string
-	content string
+	content    string
+	likes      int
 }
 
 type CreateTweet struct {
@@ -44,7 +45,7 @@ func (r *TweetRedisRepository) CreateTweet(userId int, tweet CreateTweet) error 
 		return err
 	}
 
-	_, err = conn.Do("HMSET", "post:"+strconv.Itoa(nextPostId), "time", currentTime, "content", tweet.content)
+	_, err = conn.Do("HMSET", "post:"+strconv.Itoa(nextPostId), "time", currentTime, "content", tweet.content, "likes", 0)
 
 	if err != nil {
 		return err
@@ -76,9 +77,16 @@ func (r *TweetRedisRepository) GetTweet(id string) (*Tweet, error) {
 		return nil, err
 	}
 
+	likes, err := strconv.Atoi(tweet["likes"])
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &Tweet{
 		timePosted: timePosted.String(),
-		content: tweet["content"],
+		content:    tweet["content"],
+		likes:      likes,
 	}, nil
 }
 
@@ -92,6 +100,7 @@ func (r *TweetRedisRepository) Like(id string) error {
 	}
 	return nil
 }
+
 //
 //func (r *TweetRedisRepository) DeleteTweet()  {
 //
