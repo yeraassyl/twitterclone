@@ -1,3 +1,4 @@
+//go:build wireinject
 // +build wireinject
 
 package main
@@ -12,4 +13,3 @@ func InitializeUserService() *webservice.UserService {
 	wire.Build(NewPool, db.NewUserRepository, webservice.NewUserService)
 	return &webservice.UserService{}
 }
-

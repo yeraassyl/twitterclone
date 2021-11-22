@@ -55,7 +55,9 @@ func main() {
 	r.Route("/user", func(r chi.Router) {
 		r.Use(auth.Authorization)
 		r.Get("/", userService.ListUsers)
+		r.Post("/", userService.CreateUser)
 		r.Get("/{id}", userService.GetUser)
+		r.Post("/follow", userService.Follow)
 	})
 
 	http.ListenAndServe(":8080", r)
