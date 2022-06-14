@@ -58,7 +58,9 @@ func main() {
 		r.Get("/", userService.ListUsers)
 		r.Post("/", userService.CreateUser)
 		r.Get("/{id}", userService.GetUser)
-		r.Post("/follow", userService.Follow)
+		r.Post("/{id}/follow", userService.Follow)
+		r.Get("/{id}/tweets", tweetService.ListTweets)
+		r.Get("/tweets", tweetService.UserFeed)
 	})
 
 	r.Route("/tweet", func(r chi.Router) {

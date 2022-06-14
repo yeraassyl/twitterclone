@@ -1,35 +1,22 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {IAuthResponse} from "../models/models";
+import {IAuthResponse, Tweet, User} from "../models/models";
 import * as moment from "moment";
+import {MainService} from "./main.service";
 
 @Injectable({
   providedIn: 'root'
 })
-export class ProviderService{
+export class ProviderService extends MainService{
 
-  private baseUrl = 'http://localhost:8080'
+  private baseUrl = 'http://18.179.197.12'
 
-  constructor(protected http: HttpClient) {
+  constructor(http: HttpClient) {
+    super(http)
   }
 
   formatDate(date: Date) {
     return moment(date).format('YYYY-MM-DD');
-  }
-
-  private normalBody(body: any): any {
-    if (!body) {
-      body = {};
-    }
-    for (const key in body) {
-      if (!body.hasOwnProperty(key)) {
-        continue;
-      }
-      if (body[key] instanceof Date) {
-        body[key] = this.formatDate(body[key]);
-      }
-    }
-    return body;
   }
 
   auth(){
@@ -38,11 +25,41 @@ export class ProviderService{
     })
   }
 
-  listUsers(){
-    return this.http.get<any>(`${this.baseUrl}/user`).subscribe(resp => {
-      console.log(resp);
+  listUsers(): Promise<User[]> {
+    return this.get(`${this.baseUrl}/user`, {});
+  }
+
+  getUser(id: number): Promise<User> {
+    return this.get(`${this.baseUrl}/user/${id}`, {})
+  }
+
+  createPost(content: string): Promise<any>{
+    return this.post(`${this.baseUrl}/tweet/`, {
+      content: content
     })
   }
 
+  getFeed(): Promise<Tweet[]> {
+    return this.get(`${this.baseUrl}/user/tweets`, {})
+  }
 
+  getPosts(id: number): Promise<Tweet[]> {
+    return this.get(`${this.baseUrl}/user/${id}/tweets`, {})
+  }
+
+  getPost(id: number): Promise<Tweet> {
+    return this.get(`${this.baseUrl}/tweet/${id}`, {})
+  }
+
+  likePost(id: number): Promise<any> {
+    return this.post(`${this.baseUrl}/tweet/${id}/like`, {})
+  }
+
+  follow(id: number): Promise<any> {
+    return this.post(`${this.baseUrl}/user/${id}/follow`, {})
+  }
+
+  createUserIfNotExists(): Promise<User> {
+    return this.post(`${this.baseUrl}/user`, {})
+  }
 }

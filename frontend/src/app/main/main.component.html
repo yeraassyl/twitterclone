@@ -4,8 +4,32 @@
   </ng-container>
 
   <ng-container *ngIf="logged">
-    Welcome, {{socialUser.email}}!!!
-    <button (click)="logOut()">LOG OUT</button>
-    <button (click)="userList()">User list</button>
+    Welcome, {{email}}!!!
+    <div>
+      <button routerLink="/">HOME</button>
+    </div>
+    <div>
+      <button routerLink="/posts/">Tweets</button>
+    </div>
+    <div>
+      <button routerLink="/users/">Users</button>
+    </div>
+    <div>
+      <button (click)="logOut()">LOG OUT</button>
+    </div>
+
+    <div>Your followers:
+      <div *ngFor="let f of user.followers">
+        <span routerLink="/user/{{f}}">ID: {{f}}</span>
+      </div>
+    </div>
+
+    <div>Your following:
+      <div *ngFor="let f of user.following">
+        <span routerLink="/user/{{f}}">{{f}}</span>
+      </div>
+    </div>
+
   </ng-container>
+  <router-outlet></router-outlet>
 </div>

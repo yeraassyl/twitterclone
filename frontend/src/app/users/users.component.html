@@ -1,0 +1,7 @@
+USERS:
+<div *ngFor="let user of users">
+  <span routerLink="/user/{{user.id}}">
+    Email: {{user.email}}
+  </span>
+  <button (click)="follow(user.id)">Follow</button>
+</div>

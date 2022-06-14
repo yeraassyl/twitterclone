@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"github.com/gomodule/redigo/redis"
 	"log"
 	"strconv"
@@ -28,7 +29,7 @@ type Follow struct {
 
 type UserRepository interface {
 	ListUsers() ([]UserSimple, error)
-	CreateUser(user CreateUser) error
+	CreateUser(email string) (*User, error)
 	GetUser(id string) (*User, error)
 	UserExists(email string) bool
 	Follow(userId int, anotherUserId int) error
@@ -67,29 +68,34 @@ func (r *UserRedisRepository) ListUsers() ([]UserSimple, error) {
 	return users, nil
 }
 
-func (r *UserRedisRepository) CreateUser(user CreateUser) error {
+func (r *UserRedisRepository) CreateUser(email string) (*User, error) {
 	conn := r.pool.Get()
 
 	nextUserId, err := redis.Int(conn.Do("INCR", "next_user_id"))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = conn.Do("HMSET", "user:"+strconv.Itoa(nextUserId), "email", user.Email)
+	_, err = conn.Do("HMSET", "user:"+strconv.Itoa(nextUserId), "email", email)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = conn.Do("HSET", "users", user.Email, nextUserId)
+	_, err = conn.Do("HSET", "users", email, nextUserId)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	log.Println("CREATED USER " + user.Email)
+	log.Println("CREATED USER " + email)
 
-	return nil
+	return &User{
+		Id:        strconv.Itoa(nextUserId),
+		Email:     email,
+		Followers: []int{},
+		Following: []int{},
+	}, nil
 }
 
 func (r *UserRedisRepository) GetUser(id string) (*User, error) {
@@ -101,13 +107,13 @@ func (r *UserRedisRepository) GetUser(id string) (*User, error) {
 		return nil, err
 	}
 
-	followers, err := redis.Ints(conn.Do("HGETALL", "followers:"+id))
+	followers, err := redis.Ints(conn.Do("SMEMBERS", "followers:"+id))
 
 	if err != nil {
 		return nil, err
 	}
 
-	following, err := redis.Ints(conn.Do("HGETALL", "following:"+id))
+	following, err := redis.Ints(conn.Do("SMEMBERS", "following:"+id))
 
 	if err != nil {
 		return nil, err
@@ -170,5 +176,6 @@ func (r *UserRedisRepository) Follow(userId int, anotherUserId int) error {
 		return err
 	}
 
+	fmt.Println(userId, anotherUserId)
 	return nil
 }

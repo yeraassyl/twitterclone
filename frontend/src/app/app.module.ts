@@ -12,16 +12,28 @@ import {
   GoogleLoginProvider
 } from 'angularx-social-login';
 import {AuthInterceptor} from "./AuthInterceptor";
+import { PostsComponent } from './posts/posts.component';
+import { UserComponent } from './user/user.component';
+import { UsersComponent } from './users/users.component';
+import { AppRoutingModule } from './app-routing.module';
+import {FormsModule} from "@angular/forms";
+import { PostComponent } from './post/post.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    MainComponent
+    MainComponent,
+    PostsComponent,
+    UserComponent,
+    UsersComponent,
+    PostComponent
   ],
   imports: [
     BrowserModule,
     HttpClientModule,
-    SocialLoginModule
+    SocialLoginModule,
+    AppRoutingModule,
+    FormsModule,
   ],
   providers: [
     ProviderService,

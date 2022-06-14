@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"hennge/yerassyl/twitterclone/internal/db"
 	"net/http"
+	"strconv"
 )
 
 type UserService struct {
@@ -69,22 +70,43 @@ func (s *UserService) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	var user db.CreateUser
-	err := decoder.Decode(&user)
+	userEmail, ok := r.Context().Value("user").(string)
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if !ok {
+		http.Error(w, http.StatusText(401), http.StatusBadRequest)
 	}
 
-	if s.userRepository.UserExists(user.Email) {
-		http.Error(w, "User already exists", http.StatusInternalServerError)
+	if s.userRepository.UserExists(userEmail) {
+		userSimple, err := s.userRepository.GetUserSimple(userEmail)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		user, err := s.userRepository.GetUser(strconv.Itoa(userSimple.Id))
+
+		response, err := json.Marshal(user)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		w.Header().Set("Content-type", "application/json")
+		w.Write(response)
+		return
 	}
 
-	err = s.userRepository.CreateUser(user)
+	user, err := s.userRepository.CreateUser(userEmail)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
+	response, err := json.Marshal(user)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-type", "application/json")
+	w.Write(response)
 }
 
 func (s *UserService) Follow(w http.ResponseWriter, r *http.Request) {
@@ -101,15 +123,13 @@ func (s *UserService) Follow(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	var follow db.Follow
-	err = decoder.Decode(&follow)
+	userToFollow, err := strconv.Atoi(chi.URLParam(r, "id"))
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	err = s.userRepository.Follow(userId.Id, follow.UserToFollow)
+	err = s.userRepository.Follow(userId.Id, userToFollow)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
