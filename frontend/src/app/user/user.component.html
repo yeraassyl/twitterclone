@@ -1,9 +1,0 @@
-<h3>{{user.email}}</h3>
-
-<h4>Tweets:</h4>
-
-<div *ngFor="let tweet of tweets">
-  <span routerLink="/post/{{tweet.id}}">{{tweet.content}}</span>
-  <span>at: {{tweet.timePosted}}</span>
-  <span>{{tweet.likes}} likes</span>
-</div>
